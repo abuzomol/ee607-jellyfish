@@ -1,0 +1,191 @@
+\documentclass[conference]{IEEEtran}
+%\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage[noend]{algpseudocode}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{textcomp}
+\usepackage{xcolor}
+
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\newtheorem{theorem}{Theorem}
+\newcommand{\te}{\text}
+
+
+\begin{document}
+
+\title{Analysis of Jellyfish Topology over Traffic Load}
+
+\author{\IEEEauthorblockN{Muzamil Yahia}
+\IEEEauthorblockA{\textit{Dept. Computer Science} \\
+\textit{University of Hawaii at Manoa}\\
+muzamil@hawaii.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+  Traffic sharing through Equal Cost Multiple Path (ECMP) is a common practice in datacenters to exploit the available resources according to the load demand. Being able to incrementally expand these networks is essential for industry to adapt to increasing demands when needed. Having fixed topology of the network may hinder the traffic sharing and network expansion. Jellyfish topology introduced in 2012 by Ankit Singla et.al. to increases the throughout of available network and allows for incremental expansion of network \cite{Singla:12}. 
+  
+  In this report, we study three types of Jellyfish topologies, analyse their performance over heavy and half heavy traffic load using ECMP protocol. We notice that random Jellyfish topology offers better if not equivalent performance than Incrementing Jellyfish and Bipartite Jellyfish in both models of heavy and half heavy traffic loads.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Networking, distributed algorithms, Network Topology, Traffic Load, ECMP, Routing Protocol.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+
+The rapid growth of online services (with heavy streaming, video-games, and virtual worlds) places huge demand over the underlying network. Being able to meet these demands is essential to remain in the market. Traffic Engineering using Equal Cost Multiple Path (ECMP) which splits equally the load between the shortest paths between two nodes in the network helps overall to reduce the traffic load over links and increase the throughput \cite{Thaler:20}. Despite the limitations of ECMP, it still remains popular in industry due to other features like being simple to implement, with predictable shortest paths, low protocol overhead and scalable to additional nodes in network \cite{Cheisa:17}. 
+
+Scalable low overhead software solutions to reduce traffic problem need to be accompanied with scalable low overhead hardware architecture. Jellyfish networks introduced by Ankit Singla et.al. offer such needed architecture for the network topology \cite{Singla:12}. Its ability to reduce traffic relies on the flexibility of re-routing the network on demands. As we witnessing new programmable switches, flexible network architecture can be build with such devices with little overhead see \cite{ben2018}. In this report, we study three types of Jellyfish network: Random Jellyfish, Incrementing Jelly fish and Bipartite Jellyfish. We compare the compare the performance of these network over heavy load, and lesser load using metrics of maximum throughout over ECMP protocol.
+
+\section{Jellyfish topologies}
+
+Jellyfish is an undirected graph with random links between its vertices. Given $|V| = n$, and max degree $d$. Jellyfish topology can be constructed in three different ways:
+
+\subsection{Random Jellyfish} 
+In this topology, we start with an empty set of edges $E$. We then choose two random nodes $u$ and $v$ from $V$ and connect them through a link $e = (u,v)$ and update $E = E \cup\{e\}$. We keep repeating this process till almost every node in $V$ has degree $d$. 
+
+\begin{algorithm}[H]
+\caption{}
+  \begin{algorithmic}[1]
+  \Function{RandomJellyFish}{$V, E = \emptyset $}
+    \State let $degreeSeq$ be an array of size $|V|$
+    \While{ $\exists u \in V $ with $deg(u) < d  $ } 
+    \State choose at random $ v \neq u \in V$
+    \If {$deg(v) < d$}
+      \State $E = E \cup \{ (u,v) \}$
+      \Else
+      \If{$deg(u) == d-2$}
+      \State find $ (v,w) \in E$ such that $v, w \notin N(u)$
+      \State $E = E - \{(v,w)\}$
+      \State $E = E \cup \{ (u,v), (u,w) \}$
+      \EndIf
+    \EndIf
+    \EndWhile
+  \EndFunction
+  \end{algorithmic}
+\end{algorithm} 
+This approach will populate the set $E$ with set of edges till it can no longer find a node with degree less than $d$. In practice, this might take a while when the network becomes saturated, i.e. too many nodes with degree $d$. We can limit the number of trials in line $5$ and $9$ by ($10000$ trials) and we get almost a full network of degree $d$. We notice that there are (0--14) nodes with degree less than $d$ in all sizes of $V$ implemented.
+
+\subsection{Incrementing Jellyfish}
+In this topology, we create a complete graph $G_{d+1} = (V_{d+1}, E_{d+1})$ with $V_{d+1} = \{0,\dots, d\}$ and $E_{d+1} = \{ (i,j) \mid 0 \leq i \neq j \leq d \}$. We then add node $u \in \{d+1, \dots, |V| - 1\}$ in sorted order by unlinking $d/2$ random edges $(v,w) \in E_{u-1}$ and connecting $(u,v)$ and $(v,w)$ as shown below:
+\begin{algorithm}[H]
+\caption{}
+  \begin{algorithmic}[1]
+  \Function{IncrementingJellyFish}{$V, E  \neq \emptyset $}
+    \State let $V_{d+1} = \{0,\dots, d\}$
+    \State let $E_{d+1} = \{ (i,j) \mid 0 \leq i \neq j \leq d \}$
+    \For{$u=d+1$ to $|V|-1$ }
+    \State $V_u = V_{u-1} \cup \{u\}$
+      \For{$i = 1$ to $d$ with step 2}
+        \State choose $(v,w) \in E_{u-1}$ at random
+        \State $E_{u} = E_{u-1} \cup \{ (u,v), (v,w) \} - \{(v,w)\} $
+      \EndFor
+    \EndFor
+    \State $E = E_{|V|-1}$
+  \EndFunction
+  \end{algorithmic}
+\end{algorithm} 
+
+In this topology, we guarantee there every node $v\in V$ has degree $d$. 
+\subsection{Bipartite Jellyfish}
+
+In this topology, we create a complete bipartite graph from $V$ by choosing $L_d = \{0, \dots, d-1\}$ and $R_d = \{|V|-d , \dots, |V| - 1\}$ with $E_d = \{(i,j) \mid 0 \leq i \leq d-1 , |V| - d, \leq j \leq |V| - 1\} $. We then choose two random nodes $u,v$ not in $V_d = L_d \cup R_d$, link them together, and unlink $d/2$ links in $E_d$ and reconnect their adjacent nodes with $u$ and $v$ as shown in the algorithm below:
+
+\begin{algorithm}[H]
+\caption{}
+  \begin{algorithmic}[1]
+  \Function{BipartiteJellyFish}{$V, E  \neq \emptyset $}
+    \State let $V_{d} = \{0,\dots, d-1\} \cup \{|V|-d, \dots, |V|-1\}$
+    \State let $E_d = \{(i,j) \mid 0 \leq i \leq d-1 , |V| - d, \leq j \leq |V| - 1\}$
+    \For{$u=d$ to $|V|/2 -1$ }
+    \State $V_u = V_{u-1} \cup \{u, |V| - u - 1 \}$
+    \State $E_u = E_{u-1} \cup \{(u,v)\}$
+      \For{$i = 1$ to $d$}
+        \State choose $(v,w) \in E_{u-1}$ at random
+        \State $E_{u} = E_{u-1} - \{(v,w)\}$
+        \State $E_{u} = E_u \cup \{ (u,w), (v,|V|-u-1) \} $
+      \EndFor
+      \State $E_u = E_{u} \cup \{(u,v)\}$
+    \EndFor
+    \State $E = E_{|V|/2}$
+  \EndFunction
+  \end{algorithmic}
+\end{algorithm} 
+Similar to Incrementing Jellyfish, Bipartite Jellyfish has degree $d$ for every node $v \in V$.
+
+\section{Equal Cost MultiPath (ECMP)}
+
+In a network setting, where the number of hops is more significant than delay over link (fibre optics for example), shortest path based on number of hops plays an important role in determining how to route elements with least delay. However, choosing pure shortest path may congest certain network with the load of the entire network. Therefore a way to share load between shortest possible paths (paths with least amount of hops from source to target) is needed. ECMP does this type of routing as follows:
+
+
+\begin{algorithm}[H]
+\caption{}
+  \begin{algorithmic}[1]
+  \Function{ECMP}{$G = (V, E) , \te{trafficMatrix}  $}
+    \For{any $u \neq v \in V$} \Comment{Double loop}
+      \State traf$[u][v] = 0$ \Comment{initial traffic is zero}
+      \State $\te{load} = trafficMatrix[u][v] $
+      \State $\te{dist}[u,v] = dijikstra(G, u,v) $
+      \State $\te{pAdj}[u,v] = \{ w \in V \mid dist(u,w) + dist(w,v) = dist(u,v)  \}$
+      \State \Call{IncreaseCap}{ $G, \te{traf}, u, v , \te{load}$}
+    \EndFor
+    \State \Return traffic
+  \EndFunction
+  \end{algorithmic}
+\end{algorithm} 
+
+\begin{algorithm}[H]
+\caption{}
+  \begin{algorithmic}[1]
+  \Function{IncreaseCap}{$G, \te{traf}, u, v, \te{pAdj}, \te{load}$  }
+    \If{$\te{traf}[u][v] \neq 0$ or $u \neq v$}
+      \State $\te{nload} = \te{traffic}[u][v] / pAdj[u][v].size$
+      \For{$ w \in pAdj[u][v]$}
+        \State $\te{traffic}[u][w] += \te{nload}$
+        \State $\te{traffic}[w][u] += \te{nload}$
+        \State \Call{IncreaseCap}{$G, \te{traf}, w, v, \te{pAdj}, \te{nload}$} \Comment{BFS traversal}
+      \EndFor
+    \EndIf
+  \EndFunction
+  \end{algorithmic}
+\end{algorithm} 
+
+This function works in recursive manner where we increase the traffic of each link while doing BFS toward neighbours with equal distance from target. 
+
+Throughput is defined as follows:
+
+\begin{equation}
+  Throughput = \frac{1}{max \{ traf[u][v] \mid u , v \in V \} }
+\end{equation}
+
+\section{Performance Analysis}
+
+We use the measure of throughout in Equation 1 above, and we test with traffic matrix where $trafficMatrix[u,v] = 1$ if $u \neq v$. This traffic matrix simulates a heavy loaded network where everyone is speaking to everyone. We also test with another traffic matrix where half of the nodes are sending to $|V|/2$ random nodes. This simulates a less heavy network. The resulted performance is shown in the following figure
+
+\begin{figure}[H]
+  \includegraphics[scale = .46]{fig/performance.png}
+  \caption{Bar chart that shows the throughput performance over fully congested network and half congested network}
+\end{figure}
+
+We notice that when the network is congested, Random Jellyfish offers better if not an equivalent performance than other types of Jellyfish topologies. We believe the effect of missing out few links from Random Jellyfish (due to the way of constructing them) let Bipartite Jellyfish topology do slighter better than Random Jellyfish. Similar behaviour observed with half congested network. We notice also increase in throughput almost by two thirds when we half the congestion.
+
+\section{Conclusion} 
+ECMP is a stable and scalable method to split load equally across shortest paths. Combining ECMP with flexible network architecture like Jellyfish helps to balance the load across the network. In heavy congested network where every node is speaking to any other node at rate $r$, Random Jellyfish overcomes Incrementing Jellyfish and Bipartite Jellyfish in throughput performance. Such flexibility requires a flexible way to re-route the network and may require programmable switches or routers. We observe that this model has a limitation where we assume a router knows all nodes in the network. It is interesting to consider ECMP routing with Jellyfish topology where we know only a partial links in the network as the case in real life. Can Jellyfish perform better with biased traffic matrix?  
+\bibliography{main}
+\bibliographystyle{plain}
+
+
+\end{document}
+
+

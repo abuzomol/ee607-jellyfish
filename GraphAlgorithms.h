@@ -62,7 +62,7 @@ void increaseCapacity(int k,
                       vector<vector<double>>& trafficload,
                       double trafficKJ)
 {
-    if( k != j && trafficKJ != 0.0)
+    if (k != j && trafficKJ != 0.0)
     {
         double load = trafficKJ / (adjN[k][j].size() * 1.0);
         for (int t = 0; t < adjN[k][j].size(); t++)
@@ -96,6 +96,28 @@ void getECMPTraffic(vector<vector<double>>& trafficLoad,
             if (adjN[i][j].size() > 0)
             {
                 increaseCapacity(i, j, adjN, trafficLoad, traffic);
+            }
+        }
+    }
+}
+
+// populate traffic load between all to all ECMP
+void getECMPTraffic(vector<vector<double>>& trafficLoad,
+                    int n,
+                    vector<vector<vector<int>>>& adjN,
+                    vector<vector<double>>& trafficMatrix)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        // j is destination
+        for (int j = i + 1; j < n; j++)
+        {
+            // case there is a link that leads to j
+            // set traffic to be 1 if i is not j
+
+            if (adjN[i][j].size() > 0)
+            {
+                increaseCapacity(i, j, adjN, trafficLoad, trafficMatrix[i][j]);
             }
         }
     }

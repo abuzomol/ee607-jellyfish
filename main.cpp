@@ -78,14 +78,67 @@ int main()
             {
                 maxTrafficR = max(maxTrafficR, trafficLoadR[x][y]);
                 maxTrafficI = max(maxTrafficI, trafficLoadI[x][y]);
-                maxTrafficB = max(maxTrafficI, trafficLoadB[x][y]);
+                maxTrafficB = max(maxTrafficB, trafficLoadB[x][y]);
             }
         }
         cout << "\n*********************************************";
         cout << "\ngraph: " << t + 1 << " with " << nodesSeq[t] << " and max degree " << degreesSeq[t] ;
-        cout << "\nmaxTraffic for random Jellyfish      : " << maxTrafficR ;
-        cout << "\nmaxTraffic for incrementing Jellyfish: " << maxTrafficI ;
-        cout << "\nmaxTraffic for bipartite Jellyfish   : " << maxTrafficB ;
+        cout << "\nmaxTraffic  for random Jellyfish      : " << 1/maxTrafficR ;
+        cout << "\nmaxTraffic for incrementing Jellyfish: " << 1/maxTrafficI ;
+        cout << "\nmaxTraffic for bipartite Jellyfish   : " << 1/maxTrafficB ;
+
+        cout << "\n";
+
+        // Random permutation of traffic matrix. We randomly select p nodes to send traffic to for each node
+        vector<vector<double>> trafficMatrix(n, vector<double>(n,0.0));
+        // set up random device (default)
+        random_device r;
+        default_random_engine e1(r());
+        uniform_int_distribution<int> uniform_dist(0, n-1);
+        int  p = n/4;
+
+        for(int u = 0; u < n ; u++)
+        {
+            for (int k = 0; k < p; k++)
+            {
+                int v = uniform_dist(e1);
+                if (v == u)
+                {
+                    k--;
+                }
+                else
+                {
+                    trafficMatrix[u][v] = 1.0;
+                }
+            }
+        }
+
+        vector<vector<double>> trafficLoadRPerm(n, vector<double>(n));
+        vector<vector<double>> trafficLoadIPerm(n, vector<double>(n));
+        vector<vector<double>> trafficLoadBPerm(n, vector<double>(n));
+
+        getECMPTraffic(trafficLoadRPerm , n, adjRN,trafficMatrix);
+        getECMPTraffic(trafficLoadIPerm , n, adjIN,trafficMatrix);
+        getECMPTraffic(trafficLoadBPerm , n, adjBN, trafficMatrix);
+
+        double maxTrafficRPerm = -1.0;
+        double maxTrafficIPerm = -1.0;
+        double maxTrafficBPerm = -1.0;
+        for(int x=0; x < n; x++)
+        {
+            for(int y = 0; y < n ; y++)
+            {
+                maxTrafficRPerm = max(maxTrafficRPerm, trafficLoadRPerm[x][y]);
+                maxTrafficIPerm = max(maxTrafficIPerm, trafficLoadIPerm[x][y]);
+                maxTrafficBPerm = max(maxTrafficBPerm, trafficLoadBPerm[x][y]);
+            }
+        }
+
+        cout << "\n";
+        cout << "\n permutation Traffic:";
+        cout << "\nmax Permutation Traffic for random Jellyfish      : " << 1/maxTrafficRPerm ;
+        cout << "\nmax Permutation Traffic for incrementing Jellyfish: " << 1/maxTrafficIPerm ;
+        cout << "\nmax Permutation Traffic for bipartite Jellyfish   : " << 1/maxTrafficBPerm ;
     }
     return 0;
 }
